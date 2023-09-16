@@ -1,8 +1,11 @@
 package main
 
 import (
+	"fmt"
 	"log"
 	"net/http"
+	"strconv"
+	"text/template"
 )
 
 func helloWorld(w http.ResponseWriter, r *http.Request) {
@@ -10,7 +13,24 @@ func helloWorld(w http.ResponseWriter, r *http.Request) {
 		http.NotFound(w, r)
 		return
 	}
-	w.Write([]byte("Hello from Snake Den"))
+
+	files := []string{
+		"./ui/html/base.tmpl.html",
+		"./ui/html/pages/home.tmpl.html",
+	}
+
+	ts, err := template.ParseFiles(files...)
+	if err != nil {
+		log.Print(err.Error())
+		http.Error(w, "Internal server error", 500)
+		return
+	}
+
+	err = ts.ExecuteTemplate(w, "base", nil)
+	if err != nil {
+		log.Print(err.Error())
+		http.Error(w, "Internal server error", 500)
+	}
 }
 
 func createSnippet(w http.ResponseWriter, r *http.Request) {
@@ -31,17 +51,10 @@ func deleteSnippet(w http.ResponseWriter, r *http.Request) {
 }
 
 func viewSnippet(w http.ResponseWriter, r *http.Request) {
-	w.Write([]byte("View snippet"))
-}
-
-func main() {
-	mux := http.NewServeMux()
-	mux.HandleFunc("/", helloWorld)
-	mux.HandleFunc("/snippet/view", viewSnippet)
-	mux.HandleFunc("/snippet/create", createSnippet)
-	mux.HandleFunc("/snippet/delete", deleteSnippet)
-
-	log.Println("The server is running on http://localhost:4000")
-	err := http.ListenAndServe(":4000", mux)
-	log.Fatal(err)
+	id, err := strconv.Atoi(r.URL.Query().Get("id"))
+	if err != nil || id < 0 {
+		http.NotFound(w, r)
+		return
+	}
+	fmt.Fprintln(w, "Item id:", id)
 }
