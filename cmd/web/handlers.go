@@ -1,10 +1,13 @@
 package main
 
 import (
+	"errors"
 	"fmt"
 	"net/http"
 	"strconv"
-	"text/template"
+	// "text/template"
+
+	"snippetbox.purple-mountain.gg/internal/models"
 )
 
 func (app *application) helloWorld(w http.ResponseWriter, r *http.Request) {
@@ -12,23 +15,30 @@ func (app *application) helloWorld(w http.ResponseWriter, r *http.Request) {
 		app.notFound(w)
 		return
 	}
-
-	files := []string{
-		"./ui/html/base.tmpl.html",
-		"./ui/html/pages/home.tmpl.html",
-		"./ui/html/partials/nav.tmpl.html",
-	}
-
-	ts, err := template.ParseFiles(files...)
+	snippets, err := app.snippets.Latest()
 	if err != nil {
 		app.serveError(w, err)
 		return
 	}
-
-	err = ts.ExecuteTemplate(w, "base", nil)
-	if err != nil {
-		app.serveError(w, err)
+	for _, snippet := range snippets {
+		fmt.Fprintf(w, "%+v\n", snippet)
 	}
+	// files := []string{
+	// 	"./ui/html/base.tmpl.html",
+	// 	"./ui/html/pages/home.tmpl.html",
+	// 	"./ui/html/partials/nav.tmpl.html",
+	// }
+	//
+	// ts, err := template.ParseFiles(files...)
+	// if err != nil {
+	// 	app.serveError(w, err)
+	// 	return
+	// }
+	//
+	// err = ts.ExecuteTemplate(w, "base", nil)
+	// if err != nil {
+	// 	app.serveError(w, err)
+	// }
 }
 
 func (app *application) createSnippet(w http.ResponseWriter, r *http.Request) {
@@ -67,5 +77,14 @@ func (app *application) viewSnippet(w http.ResponseWriter, r *http.Request) {
 		app.notFound(w)
 		return
 	}
-	fmt.Fprintln(w, "Item id:", id)
+	snippet, err := app.snippets.Get(id)
+	if err != nil {
+		if errors.Is(err, models.ErrNoRecord) {
+			app.notFound(w)
+		} else {
+			app.serveError(w, err)
+		}
+		return
+	}
+	fmt.Fprintf(w, "%+v", snippet)
 }
