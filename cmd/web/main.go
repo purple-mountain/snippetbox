@@ -39,7 +39,8 @@ func main() {
 		Handler:  app.routes(),
 	}
 
-	infoLog.Printf("The server is running on http://localhost%s", *addr)
+	// infoLog.Printf("The server is running on http://localhost%s", *addr)
+	app.infoLog.Printf("The server is running on http://localhost%s", *addr)
 	err = srv.ListenAndServe()
 	errorLog.Fatal(err)
 }
