@@ -5,12 +5,11 @@ import (
 	"fmt"
 	"net/http"
 	"strconv"
-	"text/template"
 
 	"snippetbox.purple-mountain.gg/internal/models"
 )
 
-func (app *application) helloWorld(w http.ResponseWriter, r *http.Request) {
+func (app *application) home(w http.ResponseWriter, r *http.Request) {
 	if r.URL.Path != "/" {
 		app.notFound(w)
 		return
@@ -20,23 +19,9 @@ func (app *application) helloWorld(w http.ResponseWriter, r *http.Request) {
 		app.serveError(w, err)
 		return
 	}
-	files := []string{
-		"./ui/html/base.tmpl.html",
-		"./ui/html/pages/home.tmpl.html",
-		"./ui/html/partials/nav.tmpl.html",
-	}
-	ts, err := template.ParseFiles(files...)
-	if err != nil {
-		app.serveError(w, err)
-		return
-	}
-	data := &templateData{
-		Snippets: snippets,
-	}
-	err = ts.ExecuteTemplate(w, "base", data)
-	if err != nil {
-		app.serveError(w, err)
-	}
+	data := app.newTemplateData(r)
+	data.Snippets = snippets
+	app.render(w, http.StatusOK, "home.tmpl.html", data)
 }
 
 func (app *application) createSnippet(w http.ResponseWriter, r *http.Request) {
@@ -84,22 +69,8 @@ func (app *application) viewSnippet(w http.ResponseWriter, r *http.Request) {
 		}
 		return
 	}
-	data := templateData{Snippet: snippet}
+	data := app.newTemplateData(r)
+	data.Snippet = snippet
 	// fmt.Fprintf(w, "%+v", snippet)
-
-	files := []string{
-		"./ui/html/base.tmpl.html",
-		"./ui/html/pages/view.tmpl.html",
-		"./ui/html/partials/nav.tmpl.html",
-	}
-	ts, err := template.ParseFiles(files...)
-	if err != nil {
-		app.serveError(w, err)
-		return
-	}
-
-	err = ts.ExecuteTemplate(w, "base", data)
-	if err != nil {
-		app.serveError(w, err)
-	}
+	app.render(w, http.StatusOK, "view.tmpl.html", data)
 }
