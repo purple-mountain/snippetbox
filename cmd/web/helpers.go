@@ -8,7 +8,7 @@ import (
 	"time"
 )
 
-func (app *application) serveError(w http.ResponseWriter, err error) {
+func (app *application) serverError(w http.ResponseWriter, err error) {
 	trace := fmt.Sprintf("%s\n%s", err.Error(), debug.Stack())
 	app.errorLog.Output(2, trace)
 	http.Error(w, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
@@ -26,13 +26,13 @@ func (app *application) render(w http.ResponseWriter, status int, page string, d
 	ts, ok := app.templateCache[page]
 	if !ok {
 		err := fmt.Errorf("the template %s does not exist", page)
-		app.serveError(w, err)
+		app.serverError(w, err)
 		return
 	}
 	buffer := new(bytes.Buffer)
 	err := ts.ExecuteTemplate(buffer, "base", data)
 	if err != nil {
-		app.serveError(w, err)
+		app.serverError(w, err)
 		return
 	}
 	w.WriteHeader(status)
