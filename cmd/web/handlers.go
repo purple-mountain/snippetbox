@@ -5,18 +5,17 @@ import (
 	"fmt"
 	"net/http"
 	"strconv"
-	"strings"
-	"unicode/utf8"
 
 	"github.com/julienschmidt/httprouter"
 	"snippetbox.purple-mountain.gg/internal/models"
+	"snippetbox.purple-mountain.gg/internal/validator"
 )
 
 type snippetCreateForm struct {
-	Content     string
-	Title       string
-	Expires     int
-	FieldErrors map[string]string
+	Content string
+	Title   string
+	Expires int
+	validator.Validator
 }
 
 func (app *application) home(w http.ResponseWriter, r *http.Request) {
@@ -72,26 +71,16 @@ func (app *application) snippetCreatePost(w http.ResponseWriter, r *http.Request
 		return
 	}
 	form := snippetCreateForm{
-		Title:       r.PostForm.Get("title"),
-		Content:     r.PostForm.Get("content"),
-		Expires:     expires,
-		FieldErrors: make(map[string]string, 0),
+		Title:   r.PostForm.Get("title"),
+		Content: r.PostForm.Get("content"),
+		Expires: expires,
 	}
-	if strings.TrimSpace(form.Title) == "" {
-		form.FieldErrors["title"] = "This field cannot be blank"
-	} else if utf8.RuneCountInString(form.Title) > 100 {
-		form.FieldErrors["title"] = "This field cannot be more than 100 characters long"
-	}
+	form.AddFieldError(validator.NotBlank(form.Title), "title", "This field cannot be blank")
+	form.AddFieldError(validator.LowerThanMaxChars(form.Title, 100), "title", "This field cannot be more than 100 characters long")
+	form.AddFieldError(validator.NotBlank(form.Content), "content", "This field cannot be blank")
+	form.AddFieldError(validator.PermittedInt(form.Expires, 365, 7, 1), "expires", "This field must be equal 1, 7 or 365")
 
-	if strings.TrimSpace(form.Content) == "" {
-		form.FieldErrors["content"] = "This field cannot be blank"
-	}
-
-	if form.Expires != 1 && form.Expires != 7 && form.Expires != 365 {
-		form.FieldErrors["expires"] = "This field must be equal 1, 7 or 365"
-	}
-
-	if len(form.FieldErrors) > 0 {
+	if !form.IsValid() {
 		data := app.newTemplateData(r)
 		data.Form = form
 		app.render(w, http.StatusUnprocessableEntity, "create.tmpl.html", data)
