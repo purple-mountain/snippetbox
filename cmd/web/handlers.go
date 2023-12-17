@@ -12,10 +12,10 @@ import (
 )
 
 type snippetCreateForm struct {
-	Content string
-	Title   string
-	Expires int
-	validator.Validator
+	Content             string `form:"content"`
+	Title               string `form:"title"`
+	Expires             int    `form:"expires"`
+	validator.Validator `form:"-"`
 }
 
 func (app *application) home(w http.ResponseWriter, r *http.Request) {
@@ -60,21 +60,13 @@ func (app *application) snippetCreate(w http.ResponseWriter, r *http.Request) {
 }
 
 func (app *application) snippetCreatePost(w http.ResponseWriter, r *http.Request) {
-	err := r.ParseForm()
+	var form snippetCreateForm
+	err := app.decodePostForm(r, &form)
 	if err != nil {
 		app.clientError(w, http.StatusBadRequest)
 		return
 	}
-	expires, err := strconv.Atoi(r.PostForm.Get("expires"))
-	if err != nil {
-		app.clientError(w, http.StatusBadRequest)
-		return
-	}
-	form := snippetCreateForm{
-		Title:   r.PostForm.Get("title"),
-		Content: r.PostForm.Get("content"),
-		Expires: expires,
-	}
+
 	form.AddFieldError(validator.NotBlank(form.Title), "title", "This field cannot be blank")
 	form.AddFieldError(validator.LowerThanMaxChars(form.Title, 100), "title", "This field cannot be more than 100 characters long")
 	form.AddFieldError(validator.NotBlank(form.Content), "content", "This field cannot be blank")
