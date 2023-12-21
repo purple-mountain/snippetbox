@@ -14,7 +14,7 @@ import (
 	"github.com/alexedwards/scs/v2"
 	"github.com/go-playground/form/v4"
 	_ "github.com/go-sql-driver/mysql"
-	"snippetbox.purple-mountain.gg/internal/models"
+	"github.com/purple-mountain/snippetbox/internal/models"
 )
 
 type application struct {

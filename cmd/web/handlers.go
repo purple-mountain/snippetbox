@@ -7,8 +7,8 @@ import (
 	"strconv"
 
 	"github.com/julienschmidt/httprouter"
-	"snippetbox.purple-mountain.gg/internal/models"
-	"snippetbox.purple-mountain.gg/internal/validator"
+	"github.com/purple-mountain/snippetbox/internal/models"
+	"github.com/purple-mountain/snippetbox/internal/validator"
 )
 
 type snippetCreateForm struct {

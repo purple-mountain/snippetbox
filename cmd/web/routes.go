@@ -5,7 +5,7 @@ import (
 
 	"github.com/julienschmidt/httprouter"
 	"github.com/justinas/alice"
-	"snippetbox.purple-mountain.gg/ui"
+	"github.com/purple-mountain/snippetbox/ui"
 )
 
 func (app *application) routes() http.Handler {

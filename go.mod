@@ -1,4 +1,4 @@
-module snippetbox.purple-mountain.gg
+module github.com/purple-mountain/snippetbox
 
 go 1.21.1
 

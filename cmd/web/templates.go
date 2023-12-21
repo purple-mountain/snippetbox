@@ -6,8 +6,8 @@ import (
 	"path/filepath"
 	"time"
 
-	"snippetbox.purple-mountain.gg/internal/models"
-	"snippetbox.purple-mountain.gg/ui"
+	"github.com/purple-mountain/snippetbox/internal/models"
+	"github.com/purple-mountain/snippetbox/ui"
 )
 
 type templateData struct {
