@@ -21,6 +21,37 @@ func TestPing(t *testing.T) {
 	assert.Equal(t, body, "OK")
 }
 
+func TestSnippetCreate(t *testing.T) {
+	app := newTestApplication(t)
+	ts := newTestServer(t, app.routes())
+	defer ts.Close()
+
+	const (
+		validEmail    = "alice@example.com"
+		validPassword = "pa$$word"
+	)
+
+	t.Run("Unauthenticated", func(t *testing.T) {
+		statusCode, header, _ := ts.get(t, "/snippet/create")
+		assert.Equal(t, statusCode, http.StatusSeeOther)
+		assert.Equal(t, header.Get("Location"), "/user/login")
+	})
+	t.Run("Authenticated", func(t *testing.T) {
+		_, _, body := ts.get(t, "/user/login")
+		validCSRFToken := extractCSRFToken(t, body)
+
+		form := url.Values{}
+		form.Add("email", validEmail)
+		form.Add("password", validPassword)
+		form.Add("csrf_token", validCSRFToken)
+		ts.postForm(t, "/user/login", form)
+
+		statusCode, _, body := ts.get(t, "/snippet/create")
+		assert.Equal(t, statusCode, http.StatusOK)
+		assert.StringContains(t, body, `<form action="/snippet/create" method="POST">`)
+	})
+}
+
 func TestUserSignup(t *testing.T) {
 	app := newTestApplication(t)
 	ts := newTestServer(t, app.routes())

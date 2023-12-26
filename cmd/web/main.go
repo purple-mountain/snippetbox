@@ -25,11 +25,13 @@ type application struct {
 	templateCache  map[string]*template.Template
 	formDecoder    *form.Decoder
 	sessionManager *scs.SessionManager
+	debugMode      bool
 }
 
 func main() {
 	addr := flag.String("addr", ":4000", "HTTP network address")
 	dsn := flag.String("dsn", "web:oralcumshot@/snippetbox?parseTime=true", "MariaDB data source name")
+	dbg := flag.Bool("debug", false, "Enable debug mode")
 	flag.Parse()
 	infoLog := log.New(os.Stdout, "INFO\t", log.Ldate|log.Ltime)
 	errorLog := log.New(os.Stderr, "ERROR\t", log.Ldate|log.Ltime|log.Lshortfile)
@@ -57,6 +59,7 @@ func main() {
 		templateCache:  templateCache,
 		formDecoder:    formDecoder,
 		sessionManager: sessionManager,
+		debugMode:      *dbg,
 	}
 
 	tlsConfig := &tls.Config{
