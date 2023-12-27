@@ -1,6 +1,8 @@
 package mocks
 
 import (
+	"time"
+
 	"github.com/purple-mountain/snippetbox/internal/models"
 )
 
@@ -28,5 +30,19 @@ func (m *UserModel) Exists(id int) (bool, error) {
 		return true, nil
 	default:
 		return false, nil
+	}
+}
+
+func (m *UserModel) GetUser(id int) (*models.User, error) {
+	switch id {
+	case 1:
+		return &models.User{
+			ID:      1,
+			Name:    "Alice",
+			Email:   "alice@example.com",
+			Created: time.Now(),
+		}, nil
+	default:
+		return nil, models.ErrNoRecord
 	}
 }
