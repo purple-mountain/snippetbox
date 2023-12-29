@@ -47,6 +47,10 @@ func NotBlank(value string) bool {
 	return strings.TrimSpace(value) != ""
 }
 
+func IsEqual(a, b string) bool {
+	return a == b
+}
+
 func LowerThanMaxChars(value string, n int) bool {
 	return utf8.RuneCountInString(value) <= n
 }
