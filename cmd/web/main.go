@@ -1,8 +1,7 @@
 package main
 
 import (
-	"crypto/tls"
-	"database/sql"
+	"context"
 	"flag"
 	"html/template"
 	"log"
@@ -10,10 +9,10 @@ import (
 	"os"
 	"time"
 
-	"github.com/alexedwards/scs/mysqlstore"
 	"github.com/alexedwards/scs/v2"
 	"github.com/go-playground/form/v4"
-	_ "github.com/go-sql-driver/mysql"
+	"github.com/jackc/pgx/v5"
+	"github.com/joho/godotenv"
 	"github.com/purple-mountain/snippetbox/internal/models"
 )
 
@@ -29,17 +28,23 @@ type application struct {
 }
 
 func main() {
-	addr := flag.String("addr", ":4000", "HTTP network address")
-	dsn := flag.String("dsn", "web:oralcumshot@/snippetbox?parseTime=true", "MariaDB data source name")
+	addr := flag.String("addr", ":8080", "HTTP network address")
 	dbg := flag.Bool("debug", false, "Enable debug mode")
 	flag.Parse()
 	infoLog := log.New(os.Stdout, "INFO\t", log.Ldate|log.Ltime)
 	errorLog := log.New(os.Stderr, "ERROR\t", log.Ldate|log.Ltime|log.Lshortfile)
-	db, err := openDB(*dsn)
+
+	err := godotenv.Load()
+	if err != nil {
+		errorLog.Fatal("Error loading .env file")
+	}
+
+	db, err := openDB()
 	if err != nil {
 		errorLog.Fatal(err)
 	}
-	defer db.Close()
+	defer db.Close(context.Background())
+
 	templateCache, err := newTemplateCache()
 	if err != nil {
 		errorLog.Fatal(err)
@@ -47,7 +52,6 @@ func main() {
 	formDecoder := form.NewDecoder()
 
 	sessionManager := scs.New()
-	sessionManager.Store = mysqlstore.New(db)
 	sessionManager.Lifetime = 12 * time.Hour
 	sessionManager.Cookie.Secure = true
 
@@ -62,34 +66,24 @@ func main() {
 		debugMode:      *dbg,
 	}
 
-	tlsConfig := &tls.Config{
-		CurvePreferences: []tls.CurveID{tls.X25519, tls.CurveP256},
-	}
-
 	srv := http.Server{
 		Addr:         *addr,
 		ErrorLog:     errorLog,
 		Handler:      app.routes(),
-		TLSConfig:    tlsConfig,
 		IdleTimeout:  time.Minute,
 		ReadTimeout:  5 * time.Second,
 		WriteTimeout: 10 * time.Second,
 	}
 
-	// infoLog.Printf("The server is running on http://localhost%s", *addr)
-	app.infoLog.Printf("The server is running on https://localhost%s", *addr)
-	err = srv.ListenAndServeTLS("./tls/cert.pem", "./tls/key.pem")
+	infoLog.Printf("The server is running on http://localhost%s", *addr)
+	err = srv.ListenAndServe()
 	errorLog.Fatal(err)
 }
 
-func openDB(dsn string) (*sql.DB, error) {
-	db, err := sql.Open("mysql", dsn)
+func openDB() (*pgx.Conn, error) {
+	conn, err := pgx.Connect(context.Background(), os.Getenv("DATABASE_URL"))
 	if err != nil {
 		return nil, err
 	}
-	err = db.Ping()
-	if err != nil {
-		return nil, err
-	}
-	return db, nil
+	return conn, nil
 }

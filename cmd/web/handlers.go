@@ -239,7 +239,6 @@ func (app *application) snippetView(w http.ResponseWriter, r *http.Request) {
 	}
 	data := app.newTemplateData(r)
 	data.Snippet = snippet
-	// fmt.Fprintf(w, "%+v", snippet)
 	app.render(w, http.StatusOK, "view.tmpl.html", data)
 }
 

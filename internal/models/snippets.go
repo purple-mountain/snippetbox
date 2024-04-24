@@ -1,9 +1,12 @@
 package models
 
 import (
+	"context"
 	"database/sql"
 	"errors"
 	"time"
+
+	"github.com/jackc/pgx/v5"
 )
 
 type Snippet struct {
@@ -15,7 +18,7 @@ type Snippet struct {
 }
 
 type SnippetModel struct {
-	DB *sql.DB
+	DB *pgx.Conn
 }
 
 type SnippetModelInterface interface {
@@ -27,14 +30,11 @@ type SnippetModelInterface interface {
 func (m *SnippetModel) Insert(title string, content string, expires int) (int, error) {
 	stmt := `
     INSERT INTO snippets (title, content, created, expires)
-    VALUES(?, ?, UTC_TIMESTAMP(), DATE_ADD(UTC_TIMESTAMP(), INTERVAL ? DAY))
+    VALUES($1, $2, CURRENT_TIMESTAMP AT TIME ZONE 'UTC', CURRENT_TIMESTAMP AT TIME ZONE 'UTC' + INTERVAL '1 day' * $3)
+    RETURNING id
   `
-	result, err := m.DB.Exec(stmt, title, content, expires)
-	if err != nil {
-		return 0, err
-	}
-
-	id, err := result.LastInsertId()
+	id := 0
+	err := m.DB.QueryRow(context.Background(), stmt, title, content, expires).Scan(&id)
 	if err != nil {
 		return 0, err
 	}
@@ -44,10 +44,10 @@ func (m *SnippetModel) Insert(title string, content string, expires int) (int, e
 func (m *SnippetModel) Get(id int) (*Snippet, error) {
 	stmt := `
     SELECT id, title, content, created, expires FROM snippets 
-    WHERE expires > UTC_TIMESTAMP() AND id = ?
+    WHERE expires > CURRENT_TIMESTAMP AT TIME ZONE 'UTC' AND id = $1
   `
 	s := &Snippet{}
-	err := m.DB.QueryRow(stmt, id).Scan(&s.ID, &s.Title, &s.Content, &s.Created, &s.Expires)
+	err := m.DB.QueryRow(context.Background(), stmt, id).Scan(&s.ID, &s.Title, &s.Content, &s.Created, &s.Expires)
 	if err != nil {
 		if errors.Is(err, sql.ErrNoRows) {
 			return nil, ErrNoRecord
@@ -61,10 +61,10 @@ func (m *SnippetModel) Get(id int) (*Snippet, error) {
 func (m *SnippetModel) Latest() ([]*Snippet, error) {
 	stmt := `
     SELECT id, title, content, created, expires FROM snippets 
-    WHERE expires > UTC_TIMESTAMP() ORDER BY id DESC LIMIT 10
+    WHERE expires > CURRENT_TIMESTAMP AT TIME ZONE 'UTC' ORDER BY id DESC LIMIT 10
   `
 	snippets := []*Snippet{}
-	rows, err := m.DB.Query(stmt)
+	rows, err := m.DB.Query(context.Background(), stmt)
 	if err != nil {
 		return nil, err
 	}

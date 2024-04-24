@@ -1,13 +1,15 @@
 package models
 
 import (
-	"database/sql"
+	"context"
 	"os"
 	"testing"
+
+	"github.com/jackc/pgx/v5"
 )
 
-func newTestDB(t *testing.T) *sql.DB {
-	db, err := sql.Open("mysql", "test_web:pass@/test_snippetbox?parseTime=true&multiStatements=true")
+func newTestDB(t *testing.T) *pgx.Conn {
+	db, err := pgx.Connect(context.Background(), os.Getenv("DATABASE_URL"))
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -16,7 +18,7 @@ func newTestDB(t *testing.T) *sql.DB {
 	if err != nil {
 		t.Fatal(err)
 	}
-	_, err = db.Exec(string(script))
+	_, err = db.Exec(context.Background(), string(script))
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -25,11 +27,11 @@ func newTestDB(t *testing.T) *sql.DB {
 		if err != nil {
 			t.Fatal(err)
 		}
-		_, err = db.Exec(string(script))
+		_, err = db.Exec(context.Background(), string(script))
 		if err != nil {
 			t.Fatal(err)
 		}
-		db.Close()
+		db.Close(context.Background())
 	})
 	return db
 }
