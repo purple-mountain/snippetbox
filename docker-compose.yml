@@ -1,0 +1,18 @@
+services:
+  postgres:
+    container_name: snippetbox-container-pg
+    image: postgres
+    hostname: localhost
+    ports:
+      - "5432:5432"
+    environment:
+      POSTGRES_USER: admin
+      POSTGRES_PASSWORD: root
+      POSTGRES_DB: snippetbox-db
+    volumes:
+      - ./internal/models/testdata/setup.sql:/docker-entrypoint-initdb.d/init.sql
+      - postgres_db-data:/var/lib/postgresql/data
+    restart: always
+
+volumes:
+  postgres_db-data:

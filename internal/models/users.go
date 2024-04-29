@@ -2,14 +2,16 @@ package models
 
 import (
 	"context"
-	"database/sql"
 	"errors"
-	"strings"
 	"time"
 
-	"github.com/go-sql-driver/mysql"
 	"github.com/jackc/pgx/v5"
+	"github.com/jackc/pgx/v5/pgconn"
 	"golang.org/x/crypto/bcrypt"
+)
+
+const (
+	UniqueConstraintViolation = "23505"
 )
 
 type User struct {
@@ -43,9 +45,9 @@ func (m *UserModel) Insert(name, email, password string) error {
 	}
 	_, err = m.DB.Exec(context.Background(), stmt, name, email, string(hashedPassword))
 	if err != nil {
-		var mySQLError *mysql.MySQLError
-		if errors.As(err, &mySQLError) {
-			if mySQLError.Number == 1062 && strings.Contains(mySQLError.Message, "users_uc_email") {
+		var pgErr *pgconn.PgError
+		if errors.As(err, &pgErr) {
+			if pgErr.Code == UniqueConstraintViolation {
 				return ErrDuplicateEmail
 			}
 		}
@@ -61,7 +63,7 @@ func (m *UserModel) Authenticate(email, password string) (int, error) {
 	stmt := "SELECT id, hashed_password FROM users WHERE email = $1"
 	err := m.DB.QueryRow(context.Background(), stmt, email).Scan(&id, &hashedPassword)
 	if err != nil {
-		if errors.Is(err, sql.ErrNoRows) {
+		if errors.Is(err, pgx.ErrNoRows) {
 			return 0, ErrInvalidCredentials
 		} else {
 			return 0, err
@@ -90,7 +92,7 @@ func (m *UserModel) GetUser(id int) (*User, error) {
 	stmt := `SELECT name, email, created FROM users WHERE id = $1`
 	err := m.DB.QueryRow(context.Background(), stmt, id).Scan(&user.Name, &user.Email, &user.Created)
 	if err != nil {
-		if errors.Is(err, sql.ErrNoRows) {
+		if errors.Is(err, pgx.ErrNoRows) {
 			return &user, ErrNoRecord
 		} else {
 			return &user, err

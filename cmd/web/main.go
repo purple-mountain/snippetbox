@@ -12,7 +12,6 @@ import (
 	"github.com/alexedwards/scs/v2"
 	"github.com/go-playground/form/v4"
 	"github.com/jackc/pgx/v5"
-	"github.com/joho/godotenv"
 	"github.com/purple-mountain/snippetbox/internal/models"
 )
 
@@ -33,11 +32,6 @@ func main() {
 	flag.Parse()
 	infoLog := log.New(os.Stdout, "INFO\t", log.Ldate|log.Ltime)
 	errorLog := log.New(os.Stderr, "ERROR\t", log.Ldate|log.Ltime|log.Lshortfile)
-
-	err := godotenv.Load()
-	if err != nil {
-		errorLog.Fatal("Error loading .env file")
-	}
 
 	db, err := openDB()
 	if err != nil {

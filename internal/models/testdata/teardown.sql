@@ -1,3 +1,3 @@
-DROP TABLE users;
+DROP TABLE IF EXISTS users;
 
-DROP TABLE snippets;
+DROP TABLE IF EXISTS snippets;

@@ -9,19 +9,11 @@ import (
 )
 
 func newTestDB(t *testing.T) *pgx.Conn {
-	db, err := pgx.Connect(context.Background(), os.Getenv("DATABASE_URL"))
+	db, err := pgx.Connect(context.Background(), "postgres://admin:root@localhost:5432/snippetbox-db")
 	if err != nil {
 		t.Fatal(err)
 	}
 
-	script, err := os.ReadFile("./testdata/setup.sql")
-	if err != nil {
-		t.Fatal(err)
-	}
-	_, err = db.Exec(context.Background(), string(script))
-	if err != nil {
-		t.Fatal(err)
-	}
 	t.Cleanup(func() {
 		script, err := os.ReadFile("./testdata/teardown.sql")
 		if err != nil {
@@ -33,5 +25,6 @@ func newTestDB(t *testing.T) *pgx.Conn {
 		}
 		db.Close(context.Background())
 	})
+
 	return db
 }

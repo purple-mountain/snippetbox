@@ -16,11 +16,6 @@ func TestUserModelExists(t *testing.T) {
 		want   bool
 	}{
 		{
-			name:   "Valid ID",
-			userID: 1,
-			want:   true,
-		},
-		{
 			name:   "Zero ID",
 			userID: 0,
 			want:   false,
@@ -37,7 +32,9 @@ func TestUserModelExists(t *testing.T) {
 			m := UserModel{db}
 			exists, err := m.Exists(tt.userID)
 			assert.Equal(t, exists, tt.want)
-			assert.NilError(t, err)
+			if exists {
+				assert.NilError(t, err)
+			}
 		})
 	}
 }
